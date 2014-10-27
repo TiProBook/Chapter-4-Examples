@@ -1,0 +1,7 @@
+<Alloy>
+	<Window id="noteWindow" title="Note">
+		<TextArea id="txtNote"/>
+		<Button id="btnDelete" title="Delete" onClick="viewController.deleteRecord"	/>	
+		<Label id="labelUpdated"></Label>
+	</Window>
+</Alloy>

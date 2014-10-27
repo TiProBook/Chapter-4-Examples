@@ -1,0 +1,10 @@
+"Window[platform=ios formFactor=handheld]": {
+	backgroundColor:"#fff",
+	barColor:"#f1f1f1"
+}
+
+"Label": {
+	width: Ti.UI.SIZE,
+	height: Ti.UI.SIZE,
+	color: "#000"
+}

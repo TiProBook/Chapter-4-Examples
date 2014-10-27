@@ -1,0 +1,27 @@
+<Alloy>
+	
+	<!-- iOS components -->
+	<NavigationWindow platform="ios">
+        <Window title="All Notes" platform="ios">
+			<LeftNavButton title="Sync" onClick="viewController.sync" platform="ios"></LeftNavButton>
+			<RightNavButton title="New" onClick="viewController.addNew" platform="ios"></RightNavButton> 
+	        <TableView id="table" dataCollection="note" onClick="viewController.viewNote" onDelete="viewController.deleteRecord" >
+	            <TableViewRow title="{notetext}" noteID="{noteid}" />
+	        </TableView>			
+        </Window>
+    </NavigationWindow>
+    
+    <!-- Android components -->
+    <Window title="All Notes" platform="android">
+        <TableView dataCollection="note" onClick="viewController.viewNote" onLongpress="viewController.deleteRecord" >
+           <TableViewRow title="{notetext}" noteID="{noteid}" />
+        </TableView>
+   	</Window>
+   	
+    <!-- Android: menu -->
+    <Menu platform="android">
+        <MenuItem icon="Ti.Android.R.drawable.ic_input_add" onClick="viewController.addNew" showAsAction="Ti.Android.SHOW_AS_ACTION_ALWAYS"/>
+		<MenuItem icon="Ti.Android.R.drawable.ic_popup_sync" onClick="viewController.sync" showAsAction="Ti.Android.SHOW_AS_ACTION_ALWAYS"/>
+    </Menu>
+    
+</Alloy>

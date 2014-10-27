@@ -1,0 +1,19 @@
+#
+# this is your module manifest and used by Titanium
+# during compilation, packaging, distribution, etc.
+#
+version: 2.1.0
+apiversion: 2
+description: Titanium Module for integrating with Azure Mobile Services
+author: WinWire
+license: Specify your license
+copyright: WinWire
+
+
+# these should not be edited
+name: azuremobileservices
+moduleid: com.winwire.azuremobileservices
+guid: 8cfc56d8-83c6-4760-9135-04fb1640dae2
+platform: android
+minsdk: 3.2.0.GA
+commonjs: true
