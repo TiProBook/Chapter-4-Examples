@@ -1,16 +1,16 @@
 
 var eventStorage = {
 	skipRecordEvent: function(noteID, eventType){
-		var addedNotSynced = Alloy.Collections.eventStore.noteHasEventType(noteID,'add');
+		var addedNotSynced = Alloy.Collections.eventStore.noteHasEventType(noteID,'added');
 		
 		//If added but not synced yet, don't record update event
 		//We will just publish the add event with all changes
-		if(addedNotSynced && eventType == 'update'){
+		if(addedNotSynced && eventType == 'updated'){
 			return true;
 		}
 		
 		//If added but not synced yet, then removed delete the event since we have nothing to publish
-		if(addedNotSynced && eventType == 'remove'){
+		if(addedNotSynced && eventType == 'removed'){
 			evtStore.removeEventsForNote(noteid);
 			return true;
 		}
@@ -38,11 +38,6 @@ var eventStorage = {
 	    model.save();
 	    //Update the eventStore collection
 	    evtStore.fetch();
-	},
-	clearEvents : function(){
-		Alloy.Collections.eventStore.removeAll();
-	    //Update the eventStore collection
-	    evtStore.fetch();		
 	}
 };
 
