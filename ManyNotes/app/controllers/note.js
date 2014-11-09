@@ -29,7 +29,7 @@ var viewController = {
 	    // add new model to the global collection
 	    notes.add(note);
 	    //Add an event - add
-	    eventCoordinator.addEvent(note.toJSON().id,'add');
+	    eventCoordinator.addEvent(note.toJSON().id,'added');
 	},
 	edit : function(){
 		//Get the note we need to update
@@ -37,13 +37,13 @@ var viewController = {
 		//Update the note text
 		note.updateNote($.txtNote.value);
 	    //Add an event - update
-	    eventCoordinator.addEvent(args.id,'update');		
+	    eventCoordinator.addEvent(args.id,'updated');		
 	},
 	remove : function(){
 		//Get the note we need to remove
 		notes.get(args.id).destroy();
 	    //Add an event - remove
-	    eventCoordinator.addEvent(args.id,'remove');			
+	    eventCoordinator.addEvent(args.id,'removed');			
 	},
 	persist : function(){
 		//If no text entered, close window without saving
