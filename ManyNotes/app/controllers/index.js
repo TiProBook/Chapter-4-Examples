@@ -1,4 +1,4 @@
-var IDConnector = require('id-connector'),
+var IDConnector = require('identity-connector'),
 	sync = require('sync'),
 	eventCoordinator = require('event-coordinator');
 
