@@ -53,7 +53,7 @@ var viewController = {
 		//Remove note
 		notes.get(e.rowData.noteid).destroy();
 	    //Add an event - remove
-	    eventCoordinator.addEvent(e.rowData.noteID,'remove');		
+	    eventCoordinator.addEvent(e.rowData.noteID,'removed');		
 	},
 	viewNote : function(e){
 		var model = notes.get(e.rowData.noteID).toJSON();
