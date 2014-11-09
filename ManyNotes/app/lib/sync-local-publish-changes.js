@@ -14,7 +14,7 @@ var agent = {
 			var promises = [];
 
 			var events = evtStore.where({
-				eventtype:'add'
+				eventtype:'added'
 			});
 			
 			console.debug('start processing ' + events.length + ' add events');
@@ -50,7 +50,7 @@ var agent = {
 			var promises = [];
 			
 			var events = evtStore.where({
-				eventtype:'remove'
+				eventtype:'removed'
 			});
 			
 			console.debug('start processing ' + events.length + ' remove events');

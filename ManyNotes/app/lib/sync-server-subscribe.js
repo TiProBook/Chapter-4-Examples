@@ -15,10 +15,10 @@ var agent = {
 		for (var i=0;i<iLength;i++){
 			evtList[i].noteRefCount = _.where(evtList, {noteid: evtList[i].noteid}).length;
 			if(evtList[i].noteRefCount > 1){
-				evtList[i].eventtype = 'update';
+				evtList[i].eventtype = 'updated';
 			}else{
 				if(Alloy.Collections.note.noteExists(evtList[i].noteid)){
-					evtList[i].eventtype = 'update';
+					evtList[i].eventtype = 'updated';
 				}					
 			}				
 		}
@@ -47,7 +47,7 @@ var agent = {
 	},
 	add : function(evtList,evtStore){
 		var promises = [];
-		var addList = _(evtList).filter(function (x) { return x.eventtype == 'add';});		
+		var addList = _(evtList).filter(function (x) { return x.eventtype == 'added';});		
 		console.debug('downloading ' + addList.length + ' notes');
 		
 		_.each(addList, function(evt) {
@@ -86,7 +86,7 @@ var agent = {
 		return Q.all(promises);	
 	},
 	remove : function(evtList){
-		var removeList = _(evtList).filter(function (x) { return x.eventtype == 'remove';});
+		var removeList = _(evtList).filter(function (x) { return x.eventtype == 'removed';});
 		_.each(removeList, function(event) {
 			Alloy.Collections.note.get(event.noteid).destroy();
 		});

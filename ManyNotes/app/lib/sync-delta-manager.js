@@ -14,7 +14,7 @@ var agent = {
 		return  _.max(eventsForID, function(evt){ return evt.modifyid; });		
 	},
 	uniqueUpdateList :function(list){
-		var updateList = _(list).filter(function (x) { return x.eventtype == 'update';});
+		var updateList = _(list).filter(function (x) { return x.eventtype == 'updated';});
 		return _.uniq(updateList, false, function(p){ return p.noteid; });			
 	},	
 	serverToLocalCompare : function(localEvents,serverEvents){
