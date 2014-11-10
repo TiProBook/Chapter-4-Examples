@@ -5,7 +5,7 @@ var publisher = function(serverEvents){
 	
 	var removeList = _(serverEvents).filter(function (x) { return x.eventtype == 'removed';});
 	_.each(removeList, function(event) {
-		Alloy.Collections.note.get(event.noteid).destroy();
+		Alloy.Collections.note.removeIfExist(event.noteid);
 	});	
 	
 	console.debug('Finishing server removed event sync');

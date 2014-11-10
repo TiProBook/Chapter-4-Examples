@@ -43,7 +43,15 @@ exports.definition = {
 	            dbRecords.close();
 	            db.close();
 	     		return (recordCount>0);			
-			}			
+			},
+			removeIfExist : function(id){
+		        var collection = this;	
+	            var sql = "delete FROM " + collection.config.adapter.collection_name + " WHERE id=?" ;
+	            var db = Ti.Database.open(collection.config.adapter.db_name);
+	            db.execute(sql,id);
+	            db.close();
+	     		collection.trigger('sync');		
+			}							
 		});
 		return Collection;
 	}
