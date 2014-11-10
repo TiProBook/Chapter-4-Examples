@@ -10,7 +10,8 @@ var agent = {
 	}
 };
 
-var publisher = function(event){	
+var publisher = function(event){
+	event.modifyid = new Date().getTime(); // Force the event to published with the current time.	
 	var request = agent.createEventRequest(evt);  
 	if(request == null){
 		return;
