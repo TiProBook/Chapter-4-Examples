@@ -10,45 +10,41 @@ var agent = {
 		}
 	},	
 	add : function(evtStore,eventPublisher){
-		try{
-			var promises = [];
+		var promises = [];
 
-			var events = evtStore.where({
-				eventtype:'added'
-			});
+		var events = evtStore.where({
+			eventtype:'added'
+		});
+		
+		console.debug('start processing ' + events.length + ' add events');
+		_.each(events, function(event) {
+
+			var request = agent.createNoteRequest(event.toJSON().noteid);
+			if(request == null){
+				console.debug('unable to load note, skipping sync');
+			}else{
+				var deferred = Q.defer();
+				var noteID = event.toJSON().noteid;
+				console.debug('publishing noteid:' + noteID);
+			    Alloy.Globals.azure.InsertTable('notes', request, function(data) {
+			    	new eventPublisher(event)
+			    	.then(function(){
+				    	evtStore.removeEventsForNote(noteID);
+						deferred.resolve(data);					    		
+			    	});			
+	            }, function(err) {
+	            	console.error('Error publishing noteID:' + event.toJSON().noteid + ' ' + err);
+	      			var error = JSON.parse(JSON.stringify(err));
+	   				deferred.reject({
+						success:  false,
+						message: error
+					});
+	            });				
+			 promises.push(deferred.promise); 
+			}	                     	
+		});	
 			
-			console.debug('start processing ' + events.length + ' add events');
-			_.each(events, function(event) {
-
-				var request = agent.createNoteRequest(event.toJSON().noteid);
-				if(request == null){
-					console.debug('unable to load note, skipping sync');
-				}else{
-					var deferred = Q.defer();
-					var noteID = event.toJSON().noteid;
-					console.debug('publishing noteid:' + noteID);
-				    Alloy.Globals.azure.InsertTable('notes', request, function(data) {
-				    	new eventPublisher(event)
-				    	.then(function(){
-					    	evtStore.removeEventsForNote(noteID);
-							deferred.resolve(data);					    		
-				    	});			
-		            }, function(err) {
-		            	console.error('Error publishing noteID:' + event.toJSON().noteid + ' ' + err);
-		      			var error = JSON.parse(JSON.stringify(err));
-		   				deferred.reject({
-							success:  false,
-							message: error
-						});
-		            });				
-				 promises.push(deferred.promise); 
-				}	                     	
-			});	
-				
-			return Q.all(promises);			
-		}catch(err){
-			console.error('add note general error:' + JSON.stringify(err));
-		}		
+		return Q.all(promises);	
 	}
 };
 

@@ -1,5 +1,4 @@
 var Q = require("q");
-var notes =  Alloy.Collections.note;
 
 var agent = {
 	formatResults :function(input){
@@ -34,7 +33,7 @@ var agent = {
 			    	modifyid : data.modifyid			    	
 			    });
 			    // add new note model to our collection and save
-			    notes.add(note);		       
+			    Alloy.Collections.note.add(note);		       
        			note.save();
        			console.debug('note ' + data.id + ' created');
        			deferred.resolve();			       

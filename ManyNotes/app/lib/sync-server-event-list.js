@@ -51,18 +51,18 @@ var publisher = function(syncLog){
 	var defer = Q.defer();
 	var serverEvents = [];
 	
-	console.debug('Starting getting server event list');
+	console.debug('Starting: getting server event list');
 	var lastID = syncLog.findLastTranactionID();
 	console.debug('lastID=' + lastID);
 	agent.eventsSince(lastID)
 		.then(function(){
-			console.debug('Finishing getting server event list');
+			console.debug('Finishing: getting server event list');
 			defer.resolve({
 				sucess:true,
 				data:serverEvents
 			});		
 		}).catch(function(err){
-			console.error('Error getting server event list: ' + JSON.stringify(err));
+			console.error('Error: getting server event list: ' + JSON.stringify(err));
 			defer.reject({
 				success:  false,
 				message: err
