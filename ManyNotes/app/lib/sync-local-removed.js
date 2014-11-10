@@ -13,8 +13,10 @@ var agent = {
 			
 			_.each(events, function(event) {
 				var deferred = Q.defer();
-				console.debug('removing azure stored noteID:' + event.toJSON().noteid);
-			    Alloy.Globals.azure.DeleteTable('notes', event.toJSON().noteid, function(data) {
+				var noteID = event.toJSON().noteid;
+				console.debug('removing azure stored noteID:' + noteID);
+			    Alloy.Globals.azure.DeleteTable('notes', noteID, function(data) {
+			    	evtStore.removeEventsForNote(noteID);
 					deferred.resolve(data);				
 	            }, function(err) {
 	            	console.error('Error removing azure stored noteID:' + event.toJSON().noteid + ' ' + err);
