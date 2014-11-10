@@ -45,8 +45,8 @@ exports.connect = function(callback){
         options : authenticationClients, title : 'Select a login'
     });
 
-    dialog.addEventListener('click', function(evt) {        
-        if (evt.index >= 0 && evt.index <= 1) {
+    dialog.addEventListener('click', function(evt) {   
+        if ((OS_IOS && evt.index >= 0 && evt.index <= 1)||(OS_ANDROID)) {
             var authorizeClient = authenticationClients[evt.index].replace(/ /g, '').toLowerCase();
             providerHelpers.reminder(authorizeClient);
 			performAutho(authorizeClient);
