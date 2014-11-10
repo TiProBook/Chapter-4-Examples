@@ -18,9 +18,9 @@ var sync = function(callback){
 		});
 		return;
 	}
-
+	
+    // fetch existing tables from storage
 	var evtStore = Alloy.Collections.eventStore;
-	// fetch existing tables from storage
 	evtStore && evtStore.fetch();
 			
 	//Initialize our transaction log
@@ -43,7 +43,7 @@ var sync = function(callback){
 	var serverEvents = [];
 	new serverEventList(syncLog)
 		.then(function(serverEvents){
-			serverEvents = serverEvents;			
+			serverEvents = serverEvents; //make this variable accessible outside of this closure			
 			new serverRemovedEvents(serverEvents);
 			return new serverAddedEvents(serverEvents);
 		}).catch(function(err){
@@ -56,7 +56,7 @@ var sync = function(callback){
 		});	
     
     //Manage updated events
-	new manageUpdatedEvents(evtStore,serverEvents)	
+	new manageUpdatedEvents(evtStore,serverEvents,eventPublisher)	
 		.catch(function(err){
 			console.error('sync error:' + JSON.stringify(err));
 			callback({

@@ -30,7 +30,7 @@ var agent = {
 			    	new eventPublisher(event)
 			    	.then(function(){
 				    	evtStore.removeEventsForNote(noteID);
-						deferred.resolve(data);					    		
+						return deferred.resolve(data);					    		
 			    	});			
 	            }, function(err) {
 	            	console.error('Error publishing noteID:' + event.toJSON().noteid + ' ' + err);

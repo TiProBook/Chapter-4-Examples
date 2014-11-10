@@ -18,80 +18,76 @@ var agent = {
 		return _.uniq(updateList, false, function(p){ return p.noteid; });			
 	},	
 	serverToLocalCompare : function(localEvents,serverEvents){
-		try{
-			console.debug('starting server to local compare');
-			var promises = [];
-			var serverSearch = agent.uniqueUpdateList(serverEvents);	
-			var notes = Alloy.Collections.note;
+		console.debug('starting server to local compare');
+		var promises = [];
+		var serverSearch = agent.uniqueUpdateList(serverEvents);	
+		var notes = Alloy.Collections.note;
+		
+		_.each(serverSearch, function(srvEvt) {
+				
+			var localEvent =  agent.createMaxEventList(localEvents,srvEvt.noteid);
+						
+			if(localEvent[0].modifyid < srvEvt.modifyid){
+				var deferred = Q.defer();	
+				var query = "?$filter=id%20eq%" + srvEvt.noteid;
+			    Alloy.Globals.azure.QueryTable('notes', query, function(jsonResponse) {
+			       	var data = JSON.parse(jsonResponse);
+			       	var note = notes.get(srvEvt.noteid);
+					note.notetext= data.notetext;
+					note.modifyid = data.modifyid;	       
+		   			note.save();
+		   			localEvents.removeEventsForNote(srvEvt.noteid);
+		   			deferred.resolve();			       
+			    }, function(err) {
+			        var error = JSON.parse(JSON.stringify(err));
+					deferred.reject({
+						success:  false,
+						message: error
+					});
+			    });
+			    promises.push(deferred.promise); 			
+			}							
+		});
+		return Q.all(promises);
+	},
+	localToServerCompare : function(localEvents,serverEvents,eventPublisher){
+		console.debug('starting local to server compare');
+		var promises = [];
+		var searchList = agent.uniqueUpdateList(localEvents);	
 			
-			_.each(serverSearch, function(srvEvt) {
-					
-				var localEvent =  agent.createMaxEventList(localEvents,srvEvt.noteid);
+		_.each(searchList, function(locEvt) {
+			
+			var serverEvent =  agent.createMaxEventList(serverEvents,locEvt.noteid);
+			
+			if(serverEvent[0].modifyid < locEvt.modifyid){
+				var request = agent.createNoteRequest(locEvt.noteid);
+				if(request !==null){
+					var deferred = Q.defer();
+			         Alloy.Globals.azure.UpdateTable('notes', locEvt.noteid, request, function(response) {
+			             new eventPublisher(locEvt)
+                        .then(function(){
+                            localEvents.removeEventsForNote(locEvt.noteid);
+                            return deferred.resolve(response);                              
+                        }); 
 							
-				if(localEvent[0].modifyid < srvEvt.modifyid){
-					var deferred = Q.defer();	
-					var query = "?$filter=id%20eq%" + srvEvt.noteid;
-				    Alloy.Globals.azure.QueryTable('notes', query, function(jsonResponse) {
-				       	var data = JSON.parse(jsonResponse);
-				       	var note = notes.get(srvEvt.noteid);
-						note.notetext= data.notetext;
-						note.modifyid = data.modifyid;	       
-			   			note.save();
-			   			deferred.resolve();			       
 				    }, function(err) {
 				        var error = JSON.parse(JSON.stringify(err));
 						deferred.reject({
 							success:  false,
 							message: error
 						});
-				    });
-				    promises.push(deferred.promise); 			
-				}							
-			});
-			return Q.all(promises);				
-		}catch(err){
-			console.error('serverToLocalCompare:' + JSON.stringify(err));
-			throw err;
-		}
-	},
-	localToServerCompare : function(localEvents,serverEvents){
-		try{
-			console.debug('starting local to server compare');
-			var promises = [];
-			var searchList = agent.uniqueUpdateList(localEvents);	
-				
-			_.each(searchList, function(locEvt) {
-				
-				var serverEvent =  agent.createMaxEventList(serverEvents,locEvt.noteid);
-				
-				if(serverEvent[0].modifyid < locEvt.modifyid){
-					var request = agent.createNoteRequest(locEvt.noteid);
-					if(request !==null){
-						var deferred = Q.defer();
-				         Alloy.Globals.azure.UpdateTable('notes', locEvt.noteid, request, function(response) {
-							deferred.resolve(response);	
-					    }, function(err) {
-					        var error = JSON.parse(JSON.stringify(err));
-							deferred.reject({
-								success:  false,
-								message: error
-							});
-					    });	
-					    promises.push(deferred.promise);	
-					}					
-				}
-			});
-			
-			return Q.all(promises);				
-		}catch(err){
-			console.error('localToServerCompare:' + JSON.stringify(err));
-			throw err;
-		}
+				    });	
+				    promises.push(deferred.promise);	
+				}					
+			}
+		});
+		
+		return Q.all(promises);
 	}	
 };
 
-var publisher = function(localEvents,serverEvents){	
-	console.debug('delta changes started');
+var publisher = function(localEvents,serverEvents,eventPublisher){	
+	console.debug('Starting : Updated event management');
 	
 	var defer = Q.defer();
 	localEvents = localEvents.toJSON();
@@ -100,13 +96,13 @@ var publisher = function(localEvents,serverEvents){
 	.then(function(){
 		return agent.localToServerCompare(localEvents,serverEvents);
 	}).then(function(){
-		console.debug('delta changes completed');
+		console.debug('Finished : Updated event management');
 		defer.resolve({
 			sucess:true,
 			data:serverEvents
 		});		
 	}).catch(function(err){
-		console.debug('delta changes errored:' + JSON.stringify(err));
+		console.error('Error : Updated event management:' + JSON.stringify(err));
 		defer.reject({
 			success:  false,
 			message: err
