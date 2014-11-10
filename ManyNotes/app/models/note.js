@@ -44,7 +44,7 @@ exports.definition = {
 	            db.close();
 	     		return (recordCount>0);			
 			},
-			removeIfExist : function(id){
+			removeIfExists : function(id){
 		        var collection = this;	
 	            var sql = "delete FROM " + collection.config.adapter.collection_name + " WHERE id=?" ;
 	            var db = Ti.Database.open(collection.config.adapter.db_name);
