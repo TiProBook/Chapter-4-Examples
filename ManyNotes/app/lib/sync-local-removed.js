@@ -3,12 +3,11 @@ var Q = require("q");
 var agent = {
 	remove :function(evtStore,eventPublisher){
 		var promises = [];
-		
 		var events = evtStore.where({
 			eventtype:'removed'
 		});
 		
-		console.debug('start processing ' + events.length + ' remove events');
+		console.debug('start processing ' + events.length + ' removed events');
 		
 		_.each(events, function(event) {
 			var deferred = Q.defer();
@@ -45,8 +44,7 @@ var publisher = function(evtStore,eventPublisher){
 			defer.resolve({
 					sucess:true
 				});
-		})
-		.catch(function(err){
+		}).catch(function(err){
 			console.error('Error: local pushisher: ' + JSON.stringify(err));
 			defer.reject({
 				success:  false,

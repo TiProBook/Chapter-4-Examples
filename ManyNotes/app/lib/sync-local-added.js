@@ -11,12 +11,11 @@ var agent = {
 	},	
 	add : function(evtStore,eventPublisher){
 		var promises = [];
-
 		var events = evtStore.where({
 			eventtype:'added'
 		});
 		
-		console.debug('start processing ' + events.length + ' add events');
+		console.debug('start processing ' + events.length + ' added events');
 		_.each(events, function(event) {
 
 			var request = agent.createNoteRequest(event.toJSON().noteid);
@@ -58,8 +57,7 @@ var publisher = function(evtStore,eventPublisher){
 			defer.resolve({
 					sucess:true
 				});
-		})
-		.catch(function(err){
+		}).catch(function(err){
 			console.error('Error local pushisher: ' + JSON.stringify(err));
 			defer.reject({
 				success:  false,

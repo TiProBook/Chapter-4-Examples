@@ -66,35 +66,63 @@ var agent = {
             });
         });
         return defer.promise;        
+    },
+    addedEvent : function(event){
+        var defer = Q.defer(); 
+        agent.postEvent(event)
+       .then(function(){
+           console.debug('Finished: publishing event to server');
+            defer.resolve({
+                sucess:true,
+                data:serverEvents
+            });     
+        }).catch(function(err){
+            console.error('Error: publishing event to server ' + JSON.stringify(err));
+            defer.reject({
+                success:  false,
+                message: err
+            });
+        });  
+        return defer.promise;          
+    },
+    existingEvents : function(event){
+        var defer = Q.defer(); 
+        agent.getServerEventsForNote(event.noteid)
+        .then(function(serverEvents){
+            return agent.removeRelatedServerEvents(serverEvents);
+        }).then(function(){
+            return agent.postEvent(event);
+        }).then(function(){
+           console.debug('Finished: publishing event to server');
+            defer.resolve({
+                sucess:true,
+                data:serverEvents
+            });     
+        }).catch(function(err){
+            console.error('Error: publishing event to server ' + JSON.stringify(err));
+            defer.reject({
+                success:  false,
+                message: err
+            });
+        }); 
+        return defer.promise;        
     }	
 };
+
 var publisher = function(event){
 	if(event !=undefined || event !=null){
 		return;
 	}
 	event.modifyid = new Date().getTime(); // Force the event to published with the current time.	
 	console.debug('Starting: publishing event to server');
-	
-	var defer = Q.defer();  
-    agent.getServerEventsForNote(event.noteid)
-    .then(function(serverEvents){
-        return agent.removeRelatedServerEvents(serverEvents);
-    }).then(function(){
-        return agent.postEvent(event);
-    }).then(function(){
-       console.debug('Finished: publishing event to server');
-        defer.resolve({
-            sucess:true,
-            data:serverEvents
-        });     
-    }).catch(function(err){
-        console.error('Error: publishing event to server ' + JSON.stringify(err));
-        defer.reject({
-            success:  false,
-            message: err
-        });
-    });     
-	return defer.promise;		
+	//If is an added event, we can skip much of our publish logic
+	if(event.eventtype == 'added'){
+        return agent.addedEvent();           
+	}else{
+	    //If the event already exists, we need to smush the server events
+	    //So we only have the latest event
+        return agent.existingEvents();
+	}		
 };
 
 module.exports = publisher;
