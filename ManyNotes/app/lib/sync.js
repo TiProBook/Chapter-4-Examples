@@ -6,7 +6,6 @@ var Q = require("q"),
 	serverEventList =  require('sync-server-event-list'),
 	serverRemovedEvents = require('sync-server-removed'),
 	serverAddedEvents = require('sync-server-added'),
-
 	eventFinalizer = require('sync-event-finalizer'),
 	manageDeltaChanges = require('sync-delta-manager');
 
@@ -42,10 +41,8 @@ var sync = function(callback){
 	new serverEventList(syncLog)
 		.then(function(serverEvents){
 			serverEvents = serverEvents;			
-			new serverRemovedEvents(serverEvents)
-			.then(function(){
-				return new serverAddedEvents(serverEvents);	
-			});
+			new serverRemovedEvents(serverEvents);
+			return new serverAddedEvents(serverEvents);
 		}).catch(function(err){
 			console.error('sync error:' + JSON.stringify(err));
 			callback({
