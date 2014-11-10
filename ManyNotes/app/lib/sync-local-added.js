@@ -44,50 +44,16 @@ var agent = {
 		}catch(err){
 			console.error('add note general error:' + JSON.stringify(err));
 		}		
-	},
-	remove :function(evtStore){
-		try{
-			var promises = [];
-			
-			var events = evtStore.where({
-				eventtype:'removed'
-			});
-			
-			console.debug('start processing ' + events.length + ' remove events');
-			
-			_.each(events, function(event) {
-				var deferred = Q.defer();
-				console.debug('removing azure stored noteID:' + event.toJSON().noteid);
-			    Alloy.Globals.azure.DeleteTable('notes', event.toJSON().noteid, function(data) {
-					deferred.resolve(data);				
-	            }, function(err) {
-	            	console.error('Error removing azure stored noteID:' + event.toJSON().noteid + ' ' + err);
-	      			var error = JSON.parse(JSON.stringify(err));
-	   				deferred.reject({
-						success:  false,
-						message: error
-					});
-	            });					
-	            promises.push(deferred.promise);                	
-			});	
-				
-			return Q.all(promises);			
-		}catch(err){
-			console.error('remove note general error:' + JSON.stringify(err));
-		}		
-	}	
+	}
 };
 
 var publisher = function(evtStore){
 	var defer = Q.defer();
 	
-	console.debug('Starting local publisher');
+	console.debug('Starting local added publisher');
 	agent.add(evtStore)
 		.then(function(){
-			return agent.remove(evtStore);
-		})
-		.then(function(){
-			console.debug('Finished local publisher');
+			console.debug('Finished local added publisher');
 			defer.resolve({
 					sucess:true
 				});

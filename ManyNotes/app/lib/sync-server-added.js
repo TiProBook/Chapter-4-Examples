@@ -10,41 +10,6 @@ var agent = {
 			return null;
 		}
 	},
-	verifyStatus:function(evtList){
-		var iLength= evtList.length;
-		for (var i=0;i<iLength;i++){
-			evtList[i].noteRefCount = _.where(evtList, {noteid: evtList[i].noteid}).length;
-			if(evtList[i].noteRefCount > 1){
-				evtList[i].eventtype = 'updated';
-			}else{
-				if(Alloy.Collections.note.noteExists(evtList[i].noteid)){
-					evtList[i].eventtype = 'updated';
-				}					
-			}				
-		}
-		return evtList;	
-	},
-	eventsSince : function(modifyID){
-		modifyID = modifyID || -1;
-		var defer = Q.defer();
-		console.debug('finding server events greater than ' + modifyID);
-		var query = "?$filter=modifyid%20gt%20" + modifyID;
-	    Alloy.Globals.azure.QueryTable('noteEvents', query, function(jsonResponse) {	       
-	       var data = JSON.parse(jsonResponse);
-	       var serverEvts = agent.verifyStatus(data);
-	       console.debug('obtained ' + serverEvts.length + ' server events');
-	       defer.resolve(serverEvts);	       
-	       
-	    }, function(err) {
-	    	console.error('Error eventsSince:' + err);
-	        var error = JSON.parse(JSON.stringify(err));
-			defer.reject({
-				success:  false,
-				message: error
-			});
-	    });				
-		return defer.promise;		
-	},
 	add : function(evtList,evtStore){
 		var promises = [];
 		var addList = _(evtList).filter(function (x) { return x.eventtype == 'added';});		
@@ -84,35 +49,22 @@ var agent = {
 	    	promises.push(deferred.promise); 
 		});
 		return Q.all(promises);	
-	},
-	remove : function(evtList){
-		var removeList = _(evtList).filter(function (x) { return x.eventtype == 'removed';});
-		_.each(removeList, function(event) {
-			Alloy.Collections.note.get(event.noteid).destroy();
-		});
 	}
 };
 
-var publisher = function(evtStore,syncLog){
+var publisher = function(serverEvents){
 	var defer = Q.defer();
-	var serverEvents = [];
 	
-	console.debug('Starting server subscriber');
-	var lastID = syncLog.findLastTranactionID();
-	console.debug('lastID=' + lastID);
-	agent.eventsSince(lastID)
-		.then(function(evtList){
-			serverEvents = evtList;
-			agent.remove(serverEvents);
-			return agent.add(serverEvents);
-		}).then(function(){
-			console.debug('Finishing server subscriber');
+	console.debug('Starting server added events sync');
+	agent.add(serverEvents)
+		.then(function(){
+			console.debug('Finishing server added events sync');
 			defer.resolve({
 				sucess:true,
 				data:serverEvents
 			});		
 		}).catch(function(err){
-			console.error('Error server subscriber: ' + JSON.stringify(err));
+			console.error('Error server added event sync: ' + JSON.stringify(err));
 			defer.reject({
 				success:  false,
 				message: err

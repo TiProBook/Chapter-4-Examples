@@ -1,8 +1,12 @@
 
 var Q = require("q"),
 	syncLog = require('sync-transaction-record'),
-	localPublisher = require('sync-local-publish-changes'),
-	serverSubscribe = require('sync-server-subscribe'),
+	localAddedEvents =  require('sync-local-added'),
+	localRemovedEvents =  require('sync-local-removed'),
+	serverEventList =  require('sync-server-event-list'),
+	serverRemovedEvents = require('sync-server-removed'),
+	serverAddedEvents = require('sync-server-added'),
+
 	eventFinalizer = require('sync-event-finalizer'),
 	manageDeltaChanges = require('sync-delta-manager');
 
@@ -22,16 +26,46 @@ var sync = function(callback){
 			
 	//Initialize our transaction log
 	syncLog.init();
-	new localPublisher(evtStore)
+	new localAddedEvents(evtStore)
 		.then(function(){
-			return new serverSubscribe(evtStore,syncLog);
-		})
+			return new localRemovedEvents(evtStore);	
+		}).catch(function(err){
+			console.error('sync error:' + JSON.stringify(err));
+			callback({
+				success:false,
+				error:err
+			});
+			return;			
+		});	
+	
+	var serverEvents = [];
+	new serverEventList(syncLog)
 		.then(function(serverEvents){
-			return new manageDeltaChanges(evtStore,serverEvents);
-		})
-		.then(function(){
-			return new eventFinalizer(evtStore);
-		})
+			serverEvents = serverEvents;			
+			new serverRemovedEvents(serverEvents)
+			.then(function(){
+				return new serverAddedEvents(serverEvents);	
+			});
+		}).catch(function(err){
+			console.error('sync error:' + JSON.stringify(err));
+			callback({
+				success:false,
+				error:err
+			});
+			return;			
+		});	
+
+	new manageDeltaChanges(evtStore,serverEvents)	
+		.catch(function(err){
+			console.error('sync error:' + JSON.stringify(err));
+			callback({
+				success:false,
+				error:err
+			});	
+			return;	
+		});	
+				
+	new eventFinalizer(evtStore,syncLog)
 		.then(function(latestEvent){
 			return syncLog.saveTransaction(latestEvent);
 		}).then(function(){
@@ -45,7 +79,8 @@ var sync = function(callback){
 				success:false,
 				error:err
 			});		
-		});	
+		});			
+				
 };
 
 module.exports = sync;
