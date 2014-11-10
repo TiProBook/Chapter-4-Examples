@@ -1,13 +1,3 @@
-var Q = require("q");
-
-var agent = {
-	remove : function(evtList){
-		var removeList = _(evtList).filter(function (x) { return x.eventtype == 'removed';});
-		_.each(removeList, function(event) {
-			Alloy.Collections.note.get(event.noteid).destroy();
-		});
-	}
-};
 
 var publisher = function(serverEvents){
 	
