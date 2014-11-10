@@ -11,7 +11,7 @@ var eventStorage = {
 		
 		//If added but not synced yet, then removed delete the event since we have nothing to publish
 		if(addedNotSynced && eventType == 'removed'){
-			evtStore.removeEventsForNote(noteid);
+			Alloy.Collections.eventStore.removeEventsForNote(noteid);
 			return true;
 		}
 		
