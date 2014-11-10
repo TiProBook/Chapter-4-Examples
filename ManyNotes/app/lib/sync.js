@@ -7,7 +7,7 @@ var Q = require("q"),
 	serverRemovedEvents = require('sync-server-removed'),
 	serverAddedEvents = require('sync-server-added'),
 	eventPublisher = require('sync-event-publisher'),
-	manageDeltaChanges = require('sync-delta-manager');
+	manageUpdatedEvents = require('sync-updated-manager');
 
 var sync = function(callback){	
 
@@ -25,6 +25,8 @@ var sync = function(callback){
 			
 	//Initialize our transaction log
 	syncLog.init();
+	
+	//Perform actions based on locally generated events
 	new localAddedEvents(evtStore,eventPublisher)
 		.then(function(){
 			return new localRemovedEvents(evtStore,eventPublisher);	
@@ -37,6 +39,7 @@ var sync = function(callback){
 			return;			
 		});	
 	
+	//Perform actions based on server provided events
 	var serverEvents = [];
 	new serverEventList(syncLog)
 		.then(function(serverEvents){
@@ -51,8 +54,9 @@ var sync = function(callback){
 			});
 			return;			
 		});	
-
-	new manageDeltaChanges(evtStore,serverEvents)	
+    
+    //Manage updated events
+	new manageUpdatedEvents(evtStore,serverEvents)	
 		.catch(function(err){
 			console.error('sync error:' + JSON.stringify(err));
 			callback({
@@ -62,8 +66,11 @@ var sync = function(callback){
 			return;	
 		});	
 
+    //Save the current timestamp so we know where to start reading from next time
 	syncLog.saveTimestamp();
+	//Remove our local event cache
 	evtStore.removeAll();
+	
 	callback({
 		success:true
 	});					
