@@ -90,7 +90,7 @@ var agent = {
 	}	
 };
 
-var delta = function(localEvents,serverEvents){	
+var publisher = function(localEvents,serverEvents){	
 	console.debug('delta changes started');
 	
 	var defer = Q.defer();
@@ -116,4 +116,4 @@ var delta = function(localEvents,serverEvents){
 	return defer.promise;		
 };
 
-module.exports = delta;
+module.exports = publisher;

@@ -2,14 +2,14 @@
 // Create the Note Collection, this will be used to store all of our notes
 Alloy.Collections.note = Alloy.createCollection('note');
 Alloy.Collections.eventStore = Alloy.createCollection('eventStore');
-Alloy.Collections.syncTransactionLog = Alloy.createCollection('syncTranactionLog');
+Alloy.Collections.transactionLog = Alloy.createCollection('tranactionLog');
 
 //Add Azure Application Information
 //This is where you would put your azure mobile services name
 Alloy.CFG.azureAppInfo = {
 	name :'<---APP NAME---->'
 };
-
+	
 //Require our Azure Mobile Services Native Module
 var azure = require('com.winwire.azuremobileservices');
 //Add the module to Alloy.Globals so we can use it anywhere in the application

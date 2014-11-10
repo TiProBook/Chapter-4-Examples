@@ -1,7 +1,7 @@
 var transaction = {
 	collection: null,
 	init : function(){
-		transaction.collection = Alloy.Collections.syncTransactionLog;
+		transaction.collection = Alloy.Collections.transactionLog;
 		transaction.collection.fetch({
 			query: 'SELECT max(modifyID) as modifyID FROM ' + transaction.collection.config.adapter.collection_name		
 		});				
@@ -15,13 +15,13 @@ var transaction = {
 			return transaction.collection.models[0].toJSON().modifyID;
 		}		
 	},
-	saveTransaction :function(modifyID){
+	saveTimestamp :function(){
 	    // Create a new model for the note collection
 	    var trans = Alloy.createModel('syncTranactionLog', {
-	    	modifyID: modifyID
+	    	modifyID: new Date().getTime()
 	    });		
 	    // add new model to the global collection
-	    Alloy.Collections.syncTransactionLog.add(trans);
+	    Alloy.Collections.transactionLog.add(trans);
 		//Save model update
 		trans.save();
 	}

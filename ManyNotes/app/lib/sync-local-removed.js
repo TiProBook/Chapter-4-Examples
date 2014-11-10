@@ -1,7 +1,7 @@
 var Q = require("q");
 
 var agent = {
-	remove :function(evtStore){
+	remove :function(evtStore,eventPublisher){
 		try{
 			var promises = [];
 			
@@ -16,8 +16,11 @@ var agent = {
 				var noteID = event.toJSON().noteid;
 				console.debug('removing azure stored noteID:' + noteID);
 			    Alloy.Globals.azure.DeleteTable('notes', noteID, function(data) {
-			    	evtStore.removeEventsForNote(noteID);
-					deferred.resolve(data);				
+				    	new eventPublisher(event)
+				    	.then(function(){
+					    	evtStore.removeEventsForNote(noteID);
+							deferred.resolve(data);					    		
+				    	});					
 	            }, function(err) {
 	            	console.error('Error removing azure stored noteID:' + event.toJSON().noteid + ' ' + err);
 	      			var error = JSON.parse(JSON.stringify(err));
@@ -36,11 +39,11 @@ var agent = {
 	}	
 };
 
-var publisher = function(evtStore){
+var publisher = function(evtStore,eventPublisher){
 	var defer = Q.defer();
 	
 	console.debug('Starting local removed publisher');
-	agent.remove(evtStore)
+	agent.remove(evtStore,eventPublisher)
 		.then(function(){
 			console.debug('Finished local removed publisher');
 			defer.resolve({

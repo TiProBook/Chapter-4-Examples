@@ -9,7 +9,7 @@ var agent = {
 			return null;
 		}
 	},	
-	add : function(evtStore){
+	add : function(evtStore,eventPublisher){
 		try{
 			var promises = [];
 
@@ -28,8 +28,11 @@ var agent = {
 					var noteID = event.toJSON().noteid;
 					console.debug('publishing noteid:' + noteID);
 				    Alloy.Globals.azure.InsertTable('notes', request, function(data) {
-				    	evtStore.removeEventsForNote(noteID);
-						deferred.resolve(data);				
+				    	new eventPublisher(event)
+				    	.then(function(){
+					    	evtStore.removeEventsForNote(noteID);
+							deferred.resolve(data);					    		
+				    	});			
 		            }, function(err) {
 		            	console.error('Error publishing noteID:' + event.toJSON().noteid + ' ' + err);
 		      			var error = JSON.parse(JSON.stringify(err));
@@ -49,11 +52,11 @@ var agent = {
 	}
 };
 
-var publisher = function(evtStore){
+var publisher = function(evtStore,eventPublisher){
 	var defer = Q.defer();
 	
 	console.debug('Starting local added publisher');
-	agent.add(evtStore)
+	agent.add(evtStore,eventPublisher)
 		.then(function(){
 			console.debug('Finished local added publisher');
 			defer.resolve({

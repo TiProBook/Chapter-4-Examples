@@ -6,7 +6,7 @@ exports.definition = {
 		adapter: {
 			"type": "sql",
 			"idAttribute": "modifyID",
-			"collection_name": "syncTranactionLog"
+			"collection_name": "tranactionLog"
 		}
 	}
 };

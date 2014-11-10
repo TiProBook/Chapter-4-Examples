@@ -6,7 +6,7 @@ var Q = require("q"),
 	serverEventList =  require('sync-server-event-list'),
 	serverRemovedEvents = require('sync-server-removed'),
 	serverAddedEvents = require('sync-server-added'),
-	eventFinalizer = require('sync-event-finalizer'),
+	eventPublisher = require('sync-event-publisher'),
 	manageDeltaChanges = require('sync-delta-manager');
 
 var sync = function(callback){	
@@ -25,9 +25,9 @@ var sync = function(callback){
 			
 	//Initialize our transaction log
 	syncLog.init();
-	new localAddedEvents(evtStore)
+	new localAddedEvents(evtStore,eventPublisher)
 		.then(function(){
-			return new localRemovedEvents(evtStore);	
+			return new localRemovedEvents(evtStore,eventPublisher);	
 		}).catch(function(err){
 			console.error('sync error:' + JSON.stringify(err));
 			callback({
@@ -61,23 +61,12 @@ var sync = function(callback){
 			});	
 			return;	
 		});	
-				
-	new eventFinalizer(evtStore,syncLog)
-		.then(function(latestEvent){
-			return syncLog.saveTransaction(latestEvent);
-		}).then(function(){
-			evtStore.removeAll();
-			callback({
-				success:true
-			});		
-		}).catch(function(err){
-			console.error('sync error:' + JSON.stringify(err));
-			callback({
-				success:false,
-				error:err
-			});		
-		});			
-				
+
+	syncLog.saveTimestamp();
+	evtStore.removeAll();
+	callback({
+		success:true
+	});					
 };
 
 module.exports = sync;
