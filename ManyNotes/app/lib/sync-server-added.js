@@ -9,7 +9,7 @@ var agent = {
 			return null;
 		}
 	},
-	add : function(evtList,evtStore){
+	add : function(evtList){
 		var promises = [];
 		var addList = _(evtList).filter(function (x) { return x.eventtype == 'added';});		
 		console.debug('downloading ' + addList.length + ' notes');
