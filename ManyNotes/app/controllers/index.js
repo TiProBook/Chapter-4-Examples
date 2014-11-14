@@ -51,7 +51,7 @@ var viewController = {
 	}, 
 	deleteRecord : function(e){
 		//Remove note
-		notes.get(e.rowData.noteid).destroy();
+		notes.get(e.rowData.noteID).destroy();
 	    //Add an event - remove
 	    eventCoordinator.addEvent(e.rowData.noteID,'removed');		
 	},
