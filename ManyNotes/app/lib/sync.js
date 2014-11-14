@@ -42,10 +42,10 @@ var sync = function(callback){
 	//Perform actions based on server provided events
 	var serverEvents = [];
 	new serverEventList(syncLog)
-		.then(function(serverEvents){
-			serverEvents = serverEvents; //make this variable accessible outside of this closure			
-			new serverRemovedEvents(serverEvents);
-			return new serverAddedEvents(serverEvents);
+		.then(function(srvEvents){
+			serverEvents = srvEvents; //make this variable accessible outside of this closure			
+			new serverRemovedEvents(srvEvents);
+			return new serverAddedEvents(srvEvents);
 		}).catch(function(err){
 			console.error('sync error:' + JSON.stringify(err));
 			callback({
