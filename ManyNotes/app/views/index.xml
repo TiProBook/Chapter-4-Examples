@@ -6,7 +6,7 @@
 			<LeftNavButton title="Sync" onClick="viewController.sync" platform="ios"></LeftNavButton>
 			<RightNavButton title="New" onClick="viewController.addNew" platform="ios"></RightNavButton> 
 	        <TableView id="table" dataCollection="note" onClick="viewController.viewNote" onDelete="viewController.deleteRecord" >
-	            <TableViewRow title="{notetext}" noteID="{noteid}" />
+	            <TableViewRow title="{notetext}" noteID="{id}" />
 	        </TableView>			
         </Window>
     </NavigationWindow>
@@ -14,7 +14,7 @@
     <!-- Android components -->
     <Window title="All Notes" platform="android">
         <TableView dataCollection="note" onClick="viewController.viewNote" onLongpress="viewController.deleteRecord" >
-           <TableViewRow title="{notetext}" noteID="{noteid}" />
+           <TableViewRow title="{notetext}" noteID="{id}" />
         </TableView>
    	</Window>
    	
