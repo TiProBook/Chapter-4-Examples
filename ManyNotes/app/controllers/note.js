@@ -50,7 +50,7 @@ var viewController = {
 	    //Add an event - remove
 	    eventCoordinator.addEvent(args.id,'removed');			
 	},
-	persist : function(){
+	changed : function(){
 		//If no text entered, close window without saving
 		if($.txtNote.value.trim().length===0){
 			//If we are in edit mode, assume we are deleting if next removed
@@ -86,7 +86,7 @@ $.txtNote.addEventListener('change',function(e){
 $.noteWindow.addEventListener('close',function(e){
 	if(noteChanged){
 	//Persist Notes
-	viewController.persist();
+	viewController.changed();
 	}
 	// update views from sql storage
 	notes.fetch();		
