@@ -12,7 +12,7 @@ $.noteWindow.title = (isEdit ? "Edit Note" : "Add Note");
 //Otherwise just use place-holder text
 if(isEdit){
 	$.txtNote.value = args.notetext;
-	$.labelUpdated.text = String.format("updated: %s %s",String.formatDate(new Date(parseFloat(args.modifyid))),String.formatTime(new Date(parseFloat(args.modifyid))));	
+	$.labelUpdated.text = String.format("Updated: %s %s",String.formatDate(new Date(parseFloat(args.modifyid))),String.formatTime(new Date(parseFloat(args.modifyid))));	
 }else{
 	$.labelUpdated.text = "Updated: Now";
 }
@@ -23,19 +23,24 @@ var notes = Alloy.Collections.note;
 var viewController = {
 	add :function(){
 	    // Create a new model for the note collection
-	    var note = Alloy.createModel('note');
-	    //Create the note, using our extension method
-		note.createNote($.txtNote.value);
+	    var noteID = Ti.Platform.createUUID();
+	    var model = Alloy.createModel('note', {
+	      id : noteID,
+	      notetext: $.txtNote.value,
+	      modifyid: new Date().getTime()
+	    });
 	    // add new model to the global collection
-	    notes.add(note);
+	    notes.add(model);
 	    //Add an event - add
-	    eventCoordinator.addEvent(note.toJSON().id,'added');
+	    eventCoordinator.addEvent(noteID,'added');
 	},
 	edit : function(){
 		//Get the note we need to update
-		var note = notes.get(args.id);
+		var model = notes.get(args.id);
 		//Update the note text
-		note.updateNote($.txtNote.value);
+		model.notetext = $.txtNote.value;
+		//Save our updated model
+		model.save();
 	    //Add an event - update
 	    eventCoordinator.addEvent(args.id,'updated');		
 	},
