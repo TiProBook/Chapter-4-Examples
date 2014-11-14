@@ -79,9 +79,15 @@ var viewController = {
 	}
 };
 
+$.txtNote.addEventListener('change',function(e){
+	noteChanged = true;
+});
+
 $.noteWindow.addEventListener('close',function(e){
+	if(noteChanged){
 	//Persist Notes
 	viewController.persist();
+	}
 	// update views from sql storage
-	notes.fetch();	
+	notes.fetch();		
 });
