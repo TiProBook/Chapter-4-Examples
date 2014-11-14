@@ -21,7 +21,7 @@ if(isEdit){
 var notes = Alloy.Collections.note;
 	    
 var viewController = {
-	add :function(){
+	create :function(){
 	    // Create a new model for the note collection
 	    var noteID = Ti.Platform.createUUID();
 	    var model = Alloy.createModel('note', {
@@ -31,14 +31,17 @@ var viewController = {
 	    });
 	    // add new model to the global collection
 	    notes.add(model);
+	    model.save();
 	    //Add an event - add
 	    eventCoordinator.addEvent(noteID,'added');
 	},
-	edit : function(){
+	update : function(){
 		//Get the note we need to update
 		var model = notes.get(args.id);
 		//Update the note text
 		model.notetext = $.txtNote.value;
+		//Update the modified time
+		model.modifyid = new Date().getTime();
 		//Save our updated model
 		model.save();
 	    //Add an event - update
@@ -61,9 +64,9 @@ var viewController = {
 		}
 		
 		if(isEdit){
-			viewController.edit();
+			viewController.update();
 		}else{
-			viewController.add();
+			viewController.create();
 		}
 		//Close the note window
 		$.noteWindow.close();			
