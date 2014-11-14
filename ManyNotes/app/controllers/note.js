@@ -65,7 +65,8 @@ var viewController = {
 		}else{
 			viewController.add();
 		}
-			
+		//Close the note window
+		$.noteWindow.close();			
 	},
 	deleteRecord : function(){
 		//Check that we are in edit mode
