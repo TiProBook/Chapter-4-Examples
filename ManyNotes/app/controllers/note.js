@@ -59,6 +59,7 @@ var viewController = {
 			//If we are in edit mode, assume we are deleting if next removed
 			if(isEdit){
 				viewController.remove();
+				$.noteWindow.close();
 			}
 			return;
 		}
