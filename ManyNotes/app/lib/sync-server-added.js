@@ -17,8 +17,8 @@ var agent = {
 		_.each(addList, function(evt) {
 			var deferred = Q.defer();
 			console.debug('preparing to dowload document id ' + evt.noteid);
-			var query = "?$filter=id%20eq%20%27" + evt.noteid + "%27";
-		    Alloy.Globals.azure.QueryTable('notes', query, function(jsonResponse) {
+			var filter = "?$filter=id%20eq%20%27" + evt.noteid + "%27";
+		    Alloy.Globals.azure.QueryTable('notes', filter, function(jsonResponse) {
 		      var data = agent.formatResults(jsonResponse);
 			  if(data == null){
 		       		console.error('invalid document description skipping id ' + evt.noteid);
