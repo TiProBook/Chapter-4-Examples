@@ -26,8 +26,7 @@ var agent = {
 				var noteID = event.toJSON().noteid;
 				console.debug('publishing noteid:' + noteID);
 			    Alloy.Globals.azure.InsertTable('notes', request, function(data) {
-			    	new eventPublisher(event)
-			    	.then(function(){
+			        new eventPublisher(event).then(function(){
 				    	evtStore.removeEventsForNote(noteID);
 						return deferred.resolve(data);					    		
 			    	});			

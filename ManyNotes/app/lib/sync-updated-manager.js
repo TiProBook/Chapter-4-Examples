@@ -9,106 +9,168 @@ var agent = {
 			return null;
 		}
 	},	
-	createMaxEventList : function(list,noteID){
-		var eventsForID = _(list).filter(function (x) { return x.noteid == noteID;});			
-		return  _.max(eventsForID, function(evt){ return evt.modifyid; });		
+	getMaxEvent : function(noteID,list){			
+		return _.max(_.where(list,{noteid:noteID}), function(evt){ return evt.modifyid; });		
 	},
-	uniqueUpdateList :function(list){
-		var updateList = _(list).filter(function (x) { return x.eventtype == 'updated';});
-		return _.uniq(updateList, false, function(p){ return p.noteid; });			
+	formatToNoteIDList : function(list){
+	  var noteList = [],
+	      length = list.length;
+	   for (var i=0;i<length;i++){
+	       noteList.push(list[i].noteid);    
+	   }
+	   return noteList;
 	},	
-	serverToLocalCompare : function(localEvents,serverEvents){
-		console.debug('starting server to local compare');
-		var promises = [];
-		var serverSearch = agent.uniqueUpdateList(serverEvents);	
-		var notes = Alloy.Collections.note;
-		
-		_.each(serverSearch, function(srvEvt) {
-				
-			var localEvent =  agent.createMaxEventList(localEvents,srvEvt.noteid);
-						
-			if(localEvent[0].modifyid < srvEvt.modifyid){
-				var deferred = Q.defer();	
-				var query = "?$filter=id%20eq%" + srvEvt.noteid;
-			    Alloy.Globals.azure.QueryTable('notes', query, function(jsonResponse) {
-			       	var data = JSON.parse(jsonResponse);
-			       	var note = notes.get(srvEvt.noteid);
-					note.notetext= data.notetext;
-					note.modifyid = data.modifyid;	       
-		   			note.save();
-		   			localEvents.removeEventsForNote(srvEvt.noteid);
-		   			deferred.resolve();			       
-			    }, function(err) {
-			        var error = JSON.parse(JSON.stringify(err));
-					deferred.reject({
-						success:  false,
-						message: error
-					});
-			    });
-			    promises.push(deferred.promise); 			
-			}							
-		});
-		return Q.all(promises);
+	postToServer : function(noteID,eventPublisher){
+	    console.debug('Updating server with noteID:' + noteID);
+        var request = agent.createNoteRequest(noteID);
+        if(request ==null){
+            console.error('invalid note model, skipping noteID:' + noteID);
+            return;
+        }
+        var deferred = Q.defer();
+         Alloy.Globals.azure.UpdateTable('notes', noteID, request, function(response) {
+             new eventPublisher({
+                id : Ti.Platform.createUUID(),
+                noteid : noteID,
+                eventtype: 'updated',
+                modifyid: new Date().getTime()                 
+             }).then(function(){
+                Alloy.Collections.eventStore.removeEventsForNote(noteID);
+                return deferred.resolve(response);                              
+            });                 
+        }, function(err) {
+            var error = JSON.parse(JSON.stringify(err));
+            deferred.reject({
+                success:  false, message: error
+            });
+        }); 
+        return deferred.promise;    	    
 	},
-	localToServerCompare : function(localEvents,serverEvents,eventPublisher){
-		console.debug('starting local to server compare');
-		var promises = [];
-		var searchList = agent.uniqueUpdateList(localEvents);	
-			
-		_.each(searchList, function(locEvt) {
-			
-			var serverEvent =  agent.createMaxEventList(serverEvents,locEvt.noteid);
-			
-			if(serverEvent[0].modifyid < locEvt.modifyid){
-				var request = agent.createNoteRequest(locEvt.noteid);
-				if(request !==null){
-					var deferred = Q.defer();
-			         Alloy.Globals.azure.UpdateTable('notes', locEvt.noteid, request, function(response) {
-			             new eventPublisher(locEvt)
-                        .then(function(){
-                            localEvents.removeEventsForNote(locEvt.noteid);
-                            return deferred.resolve(response);                              
-                        }); 
-							
-				    }, function(err) {
-				        var error = JSON.parse(JSON.stringify(err));
-						deferred.reject({
-							success:  false,
-							message: error
-						});
-				    });	
-				    promises.push(deferred.promise);	
-				}					
-			}
-		});
-		
-		return Q.all(promises);
-	}	
+	downloadFromServer : function(noteID){
+	    console.debug('downloading noteID:' + noteID);
+	    var deferred = Q.defer();  
+        var query = "?$filter=id%20eq%" + noteID;
+        Alloy.Globals.azure.QueryTable('notes', query, function(jsonResponse) {
+            var data = JSON.parse(jsonResponse);
+            var note = notes.get(noteID);
+            note.notetext= data.notetext;
+            note.modifyid = data.modifyid;         
+            note.save();
+            Alloy.Collections.eventStore.removeEventsForNote(noteID);
+            deferred.resolve();                
+        }, function(err) {
+            var error = JSON.parse(JSON.stringify(err));
+            deferred.reject({
+                success:  false, message: error
+            });
+        });	
+        
+        return deferred.promise;    
+	},
+	getLocalNoteInfo : function(noteID, list){
+
+	    if(_.where(list, {noteid:noteID}).length > 0){
+	        return agent.getMaxEvent(noteID,list).modifyid;
+	    }
+	    
+	    return Alloy.Collections.note.get(noteID).modifyid;
+	},
+	nz : function(value){
+	  if(value == undefined || value == null){
+	      return 0;
+	  }  
+	  return value;
+	},
+    gatherServerInfo : function(localEvents,serverEvents){
+            var promises = [];
+            var output = [];
+            var deferredOutter = Q.defer(); 
+                           
+            _.each(localEvents, function(note) {
+                var deferred = Q.defer();
+                var noteID = note.noteid;
+                var search = _.where(serverEvents,{noteid: noteID});
+                 if(search.length == 0){
+                    console.debug("need to lookup server for noteID:" + noteID); 
+                    var query = "?$filter=id%20eq%" + noteID;
+                    Alloy.Globals.azure.QueryTable('notes', query, function(jsonResponse) {
+                        console.debug('adding server version noteID:' + noteID);
+                        var data = JSON.parse(jsonResponse);
+                        data.id = Ti.Platform.createUUID();
+                        data.noteid = noteID;
+                        output.push(data);      
+                        deferred.resolve(data);                
+                    }, function(err) {
+                        console.debug('adding missing server version noteID:' + noteID);
+                        output.push({
+                           id : Ti.Platform.createUUID(),
+                           noteid:noteID,
+                           modifyid : 0
+                        });
+                        deferred.resolve();
+                    });
+                    promises.push(deferred.promise); 
+                 }                             
+            });
+        
+            Q.all(promises).done(function(){
+               deferredOutter.resolve(output);
+            });
+            
+            return deferredOutter.promise;
+    },	
+	compare : function(localEvents,serverEvents,eventPublisher){
+	    var localIDs = agent.formatToNoteIDList(localEvents);
+	    var serverIDs = agent.formatToNoteIDList(serverEvents);
+	    var changes = _.uniq(localIDs,serverIDs);
+	    var promises = [];
+	    _.each(changes, function(noteID) {
+	        
+	        var exists = Alloy.Collections.note.noteExists(noteID);  
+            var localVersion = agent.nz(agent.getLocalNoteInfo(noteID,localEvents));
+            var serverVersion = agent.nz(agent.getMaxEvent(noteID,serverEvents).modifyid);
+            console.debug("noteID:" + noteID + " localVersion:" + localVersion + " serverVersion:" + serverVersion); 
+               
+            if(exists & (localVersion == serverVersion)){
+                console.debug("Skipping same version information");           
+            }
+
+            if(exists & (localVersion > serverVersion)){
+                console.debug("Posting to server");
+                promises.push(agent.postToServer(noteID,eventPublisher));            
+            }
+                        
+            if((exists == false) || (serverVersion > localVersion)){
+               console.debug("Downloading to local");
+               promises.push(downloadFromServer(noteID));                 
+            }               	          
+            
+	    });	    
+	    
+	    return Q.all(promises);
+	}
 };
 
 var publisher = function(localEvents,serverEvents,eventPublisher){	
 	console.debug('Starting : Updated event management');
-	
 	var defer = Q.defer();
 	localEvents = localEvents.toJSON();
-	
-	agent.serverToLocalCompare(localEvents,serverEvents)
-	.then(function(){
-		return agent.localToServerCompare(localEvents,serverEvents);
-	}).then(function(){
-		console.debug('Finished : Updated event management');
-		defer.resolve({
-			sucess:true,
-			data:serverEvents
-		});		
-	}).catch(function(err){
-		console.error('Error : Updated event management:' + JSON.stringify(err));
-		defer.reject({
-			success:  false,
-			message: err
-		});
-	});
-	
+    agent.gatherServerInfo(localEvents,serverEvents)
+    .then(function(serverInfoFull){
+        return agent.compare(localEvents,serverInfoFull,eventPublisher)
+        .then(function(){
+            console.debug('Finished : Updated event management');
+            defer.resolve({
+                sucess:true, data:serverInfoFull
+            });           
+       });
+    }).catch(function(err){
+        console.error('Error : Updated event management:' + JSON.stringify(err));
+        defer.reject({
+            success:  false, message: err
+        });
+    });
+		
 	return defer.promise;		
 };
 

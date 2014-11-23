@@ -45,7 +45,7 @@ var publisher = function(evtStore,eventPublisher){
 					sucess:true
 				});
 		}).catch(function(err){
-			console.error('Error: local pushisher: ' + JSON.stringify(err));
+			console.error('Error: local removed pushisher: ' + JSON.stringify(err));
 			defer.reject({
 				success:  false,
 				message: err

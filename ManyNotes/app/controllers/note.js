@@ -1,5 +1,5 @@
 var args = arguments[0] || {};
-
+var noteChanged = false;
 var eventCoordinator = require('event-coordinator');
 
 //Check if we have the noteText and noteID value, if so we are in edit mode
@@ -38,10 +38,12 @@ var viewController = {
 	update : function(){
 		//Get the note we need to update
 		var model = notes.get(args.id);
-		//Update the note text
-		model.notetext = $.txtNote.value;
-		//Update the modified time
-		model.modifyid = new Date().getTime();
+		//Update model with new information
+		model.set({
+		    notetext:$.txtNote.value,
+		    modifyid :new Date().getTime()
+		});
+		
 		//Save our updated model
 		model.save();
 	    //Add an event - update
@@ -87,10 +89,10 @@ $.txtNote.addEventListener('change',function(e){
 	noteChanged = true;
 });
 
-$.noteWindow.addEventListener('close',function(e){
+$.noteWindow.addEventListener('blur',function(e){
 	if(noteChanged){
-	//Persist Notes
-	viewController.changed();
+	   //Persist Notes
+	   viewController.changed();
 	}
 	// update views from sql storage
 	notes.fetch();		

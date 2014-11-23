@@ -11,7 +11,7 @@ var eventStorage = {
 		
 		//If added but not synced yet, then removed delete the event since we have nothing to publish
 		if(addedNotSynced && eventType == 'removed'){
-			Alloy.Collections.eventStore.removeEventsForNote(noteid);
+			Alloy.Collections.eventStore.removeEventsForNote(noteID);
 			return true;
 		}
 		
@@ -24,7 +24,9 @@ var eventStorage = {
 		if(eventStorage.skipRecordEvent(noteID,eventType)){
 			return;
 		}
-				
+
+        Alloy.Collections.eventStore.removeEventsForNote(noteID);
+            				
 		//Create a new event for this note				
 	    var model = Alloy.createModel('eventStore', {
 	        id : Ti.Platform.createUUID(),

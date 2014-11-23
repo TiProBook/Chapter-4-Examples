@@ -25,11 +25,59 @@ var sync = function(callback){
 			
 	//Initialize our transaction log
 	syncLog.init();
+	var serverEvents = [];
 	
+	var flow = {
+        serverSide :function(){
+            //Perform actions based on server provided events
+            new serverEventList(syncLog)
+                .then(function(srvEvents){
+                    serverEvents = srvEvents.data; //make this variable accessible outside of this closure           
+                    new serverRemovedEvents(serverEvents);
+                    return new serverAddedEvents(serverEvents);
+                }).then(function(){
+                    flow.versionCompare();
+                }).catch(function(err){
+                    console.error('sync error:' + JSON.stringify(err));
+                    callback({
+                        success:false,
+                        error:err
+                    });
+                    return;         
+                });     
+        },
+        versionCompare :function(){
+            //Manage updated events
+            new manageUpdatedEvents(evtStore,serverEvents,eventPublisher)
+            .then(function(){
+                 flow.complete();
+            }).catch(function(err){
+                console.error('sync error:' + JSON.stringify(err));
+                callback({
+                    success:false,
+                    error:err
+                });  
+                return;  
+            });         
+        },
+        complete :function(){
+            //Save the current timestamp so we know where to start reading from next time
+            //syncLog.saveTimestamp();
+            //Remove our local event cache
+            //evtStore.removeAll();
+            
+            callback({
+                success:true
+            });         
+        }                	    
+	};
+	        	
 	//Perform actions based on locally generated events
 	new localAddedEvents(evtStore,eventPublisher)
 		.then(function(){
 			return new localRemovedEvents(evtStore,eventPublisher);	
+		}).then(function(){
+		   flow.serverSide(); 
 		}).catch(function(err){
 			console.error('sync error:' + JSON.stringify(err));
 			callback({
@@ -38,42 +86,7 @@ var sync = function(callback){
 			});
 			return;			
 		});	
-	
-	//Perform actions based on server provided events
-	var serverEvents = [];
-	new serverEventList(syncLog)
-		.then(function(srvEvents){
-			serverEvents = srvEvents; //make this variable accessible outside of this closure			
-			new serverRemovedEvents(srvEvents);
-			return new serverAddedEvents(srvEvents);
-		}).catch(function(err){
-			console.error('sync error:' + JSON.stringify(err));
-			callback({
-				success:false,
-				error:err
-			});
-			return;			
-		});	
-    
-    //Manage updated events
-	new manageUpdatedEvents(evtStore,serverEvents,eventPublisher)	
-		.catch(function(err){
-			console.error('sync error:' + JSON.stringify(err));
-			callback({
-				success:false,
-				error:err
-			});	
-			return;	
-		});	
-
-    //Save the current timestamp so we know where to start reading from next time
-	syncLog.saveTimestamp();
-	//Remove our local event cache
-	evtStore.removeAll();
-	
-	callback({
-		success:true
-	});					
+					
 };
 
 module.exports = sync;

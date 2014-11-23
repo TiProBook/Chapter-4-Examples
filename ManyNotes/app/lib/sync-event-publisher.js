@@ -15,8 +15,8 @@ var agent = {
 		    Alloy.Globals.azure.QueryTable('noteEvents', query, function(jsonResponse) {
 		      var data = agent.formatResults(jsonResponse);
 			  if(data == null){
-		       		console.error('invalid event results skipping noteid ' + evt.noteID);
-		       		return defer.resolve();
+		       		console.debug('invalid event results skipping noteid ' + noteID);
+		       		return deferred.resolve();
 		      }		       
               deferred.resolve({success:true, data:data}); 
 		    }, function(err) {
@@ -28,25 +28,24 @@ var agent = {
 				});
 		    });	
 		    
-		return defer.promise; 		
+		return deferred.promise; 		
 	},
     removeRelatedServerEvents :function(events){
         var promises = [];
-                    
+        if(events == undefined || events == null){
+            return;
+        }
         console.debug('start processing ' + events.length + ' remove events');
         
         _.each(events, function(event) {
             var deferred = Q.defer();
-            console.debug('removing azure events for noteID:' + event.noteid);
+            var noteID = event.noteid;
+            console.debug('removing azure events for event id:' + event.id);
             Alloy.Globals.azure.DeleteTable('noteEvents', event.id, function(data) {
                    deferred.resolve(data);              
             }, function(err) {
-                console.error('Error removing azure stored noteID:' + event.toJSON().noteid + ' ' + err);
-                var error = JSON.parse(JSON.stringify(err));
-                deferred.reject({
-                    success:  false,
-                    message: error
-                });
+                console.error('Error removing azure stored event id:' + event.id + ' ' + JSON.stringify(err));
+                deferred.resolve();
             });                 
             promises.push(deferred.promise);                    
         }); 
@@ -55,38 +54,38 @@ var agent = {
     },
     postEvent : function(event){
         var request = JSON.stringify(event);    
-        var defer = Q.defer();       
+        var deferred = Q.defer();       
         Alloy.Globals.azure.InsertTable('noteEvents', request, function(data) {
             deferred.resolve(data);             
         }, function(err) {
             var error = JSON.parse(JSON.stringify(err));
-            defer.reject({
+            deferred.reject({
                 success:  false,
                 message: error
             });
         });
-        return defer.promise;        
+        return deferred.promise;        
     },
     addedEvent : function(event){
-        var defer = Q.defer(); 
+        var deferred = Q.defer(); 
         agent.postEvent(event)
        .then(function(){
            console.debug('Finished: publishing event to server');
-            defer.resolve({
+            deferred.resolve({
                 sucess:true,
-                data:serverEvents
+                data:event
             });     
         }).catch(function(err){
             console.error('Error: publishing event to server ' + JSON.stringify(err));
-            defer.reject({
+            deferred.reject({
                 success:  false,
                 message: err
             });
         });  
-        return defer.promise;          
+        return deferred.promise;          
     },
     existingEvents : function(event){
-        var defer = Q.defer(); 
+        var deferred = Q.defer(); 
         agent.getServerEventsForNote(event.noteid)
         .then(function(serverEvents){
             return agent.removeRelatedServerEvents(serverEvents);
@@ -94,34 +93,35 @@ var agent = {
             return agent.postEvent(event);
         }).then(function(){
            console.debug('Finished: publishing event to server');
-            defer.resolve({
+           deferred.resolve({
                 sucess:true,
-                data:serverEvents
+                data:event
             });     
         }).catch(function(err){
             console.error('Error: publishing event to server ' + JSON.stringify(err));
-            defer.reject({
+            deferred.reject({
                 success:  false,
                 message: err
             });
         }); 
-        return defer.promise;        
+        return deferred.promise;        
     }	
 };
 
 var publisher = function(event){
-	if(event !=undefined || event !=null){
+	if(event ==undefined || event ==null){
 		return;
 	}
+	
 	event.modifyid = new Date().getTime(); // Force the event to published with the current time.	
 	console.debug('Starting: publishing event to server');
 	//If is an added event, we can skip much of our publish logic
 	if(event.eventtype == 'added'){
-        return agent.addedEvent();           
+        return agent.addedEvent(event);           
 	}else{
 	    //If the event already exists, we need to smush the server events
 	    //So we only have the latest event
-        return agent.existingEvents();
+        return agent.existingEvents(event);
 	}		
 };
 
