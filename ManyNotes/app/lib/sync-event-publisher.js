@@ -13,12 +13,12 @@ var agent = {
 		var deferred = Q.defer();
 	    var query = "?$filter=noteid%20eq%20%27" + noteID + "%27";
 		    Alloy.Globals.azure.QueryTable('noteEvents', query, function(jsonResponse) {
-		      var data = agent.formatResults(jsonResponse);
+		      var data = JSON.parse(jsonResponse);
 			  if(data == null){
 		       		console.debug('invalid event results skipping noteid ' + noteID);
 		       		return deferred.resolve();
 		      }		       
-              deferred.resolve({success:true, data:data}); 
+              deferred.resolve(data); 
 		    }, function(err) {
 		    	console.error('Error add:' + err);
 		        var error = JSON.parse(JSON.stringify(err));
@@ -35,16 +35,16 @@ var agent = {
         if(events == undefined || events == null){
             return;
         }
-        console.debug('start processing ' + events.length + ' remove events');
+        console.debug('start processing ' + events.length + ' old events to be removed');
         
         _.each(events, function(event) {
             var deferred = Q.defer();
-            var noteID = event.noteid;
-            console.debug('removing azure events for event id:' + event.id);
-            Alloy.Globals.azure.DeleteTable('noteEvents', event.id, function(data) {
+            var eventID = event.id;
+            console.debug('removing azure events for event id:' + eventID);
+            Alloy.Globals.azure.DeleteTable('noteEvents', eventID, function(data) {
                    deferred.resolve(data);              
             }, function(err) {
-                console.error('Error removing azure stored event id:' + event.id + ' ' + JSON.stringify(err));
+                console.error('Error removing azure stored event id:' + eventID + ' ' + JSON.stringify(err));
                 deferred.resolve();
             });                 
             promises.push(deferred.promise);                    

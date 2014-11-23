@@ -71,9 +71,9 @@ var agent = {
             }else{
                 //Add new model
                 var model = Alloy.createModel('note', {
-                  id : Ti.Platform.createUUID(),
+                  id : data.id,
                   notetext : data.notetext,
-                  modifyid : new Date().getTime()
+                  modifyid : data.modifyid
                 });
                 // add new model to the global collection
                 Alloy.Collections.note.add(model);
@@ -184,7 +184,7 @@ var publisher = function(localEvents,serverEvents,eventPublisher){
     function serverCorrelationRequire(){
         var defer = Q.defer();
         console.debug("Server Lookup required to match local evenets");
-        agent.gatherServerInfo(localEvents,serverUpdateEvts)
+        agent.gatherServerInfo(localUpdateEvts,serverUpdateEvts)
         .then(function(serverInfoFull){
             return agent.compare(localUpdateEvts,serverInfoFull,eventPublisher)
             .then(function(){
