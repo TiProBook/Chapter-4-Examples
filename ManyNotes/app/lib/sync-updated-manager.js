@@ -46,16 +46,32 @@ var agent = {
         }); 
         return deferred.promise;    	    
 	},
-	downloadFromServer : function(noteID){
+	downloadFromServer : function(noteID,exists){
 	    console.debug('downloading noteID:' + noteID);
 	    var deferred = Q.defer();  
         var query = "?$filter=id%20eq%" + noteID;
         Alloy.Globals.azure.QueryTable('notes', query, function(jsonResponse) {
             var data = JSON.parse(jsonResponse);
-            var note = notes.get(noteID);
-            note.notetext= data.notetext;
-            note.modifyid = data.modifyid;         
-            note.save();
+            if(exists){
+                //Update existing model
+                var note = notes.get(noteID);
+                note.set({
+                    notetext : data.notetext,
+                    modifyid : data.modifyid
+                }); 
+                note.save();                
+            }else{
+                //Add new model
+                var model = Alloy.createModel('note', {
+                  id : data.id,
+                  notetext : data.notetext,
+                  modifyid : data.modifyid
+                });
+                // add new model to the global collection
+                Alloy.Collections.note.add(model);
+                model.save();               
+            }
+       
             Alloy.Collections.eventStore.removeEventsForNote(noteID);
             deferred.resolve();                
         }, function(err) {
@@ -142,7 +158,7 @@ var agent = {
                         
             if((exists == false) || (serverVersion > localVersion)){
                console.debug("Downloading to local");
-               promises.push(downloadFromServer(noteID));                 
+               promises.push(downloadFromServer(noteID,exists));                 
             }               	          
             
 	    });	    
@@ -161,7 +177,7 @@ var publisher = function(localEvents,serverEvents,eventPublisher){
         .then(function(){
             console.debug('Finished : Updated event management');
             defer.resolve({
-                sucess:true, data:serverInfoFull
+                sucess:true
             });           
        });
     }).catch(function(err){
