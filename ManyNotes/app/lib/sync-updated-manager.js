@@ -220,7 +220,7 @@ var publisher = function(localEvents,serverEvents,eventPublisher){
         }); 
         
         return defer.promise;       
-    } 
+    }; 
         	
 	return (localUpdateEvts.length===0) ? serverProcessOnly() : serverCorrelationRequire();		
 };

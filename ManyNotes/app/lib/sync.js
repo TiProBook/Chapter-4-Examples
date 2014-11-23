@@ -41,10 +41,8 @@ var sync = function(callback){
                 }).catch(function(err){
                     console.error('sync error:' + JSON.stringify(err));
                     callback({
-                        success:false,
-                        error:err
-                    });
-                    return;         
+                        success:false, error:err
+                    });       
                 });     
         },
         versionCompare :function(serverEvents){
@@ -55,10 +53,8 @@ var sync = function(callback){
             }).catch(function(err){
                 console.error('sync error:' + JSON.stringify(err));
                 callback({
-                    success:false,
-                    error:err
+                    success:false, error:err
                 });  
-                return;  
             });         
         },
         complete :function(){
@@ -83,10 +79,8 @@ var sync = function(callback){
 		}).catch(function(err){
 			console.error('sync error:' + JSON.stringify(err));
 			callback({
-				success:false,
-				error:err
-			});
-			return;			
+				success:false, error:err
+			});		
 		});	
 					
 };
