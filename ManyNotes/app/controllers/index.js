@@ -15,8 +15,7 @@ var viewController = {
 			Alloy.createController("note").getView().open();
 		}
 	},
-	sync : function(){
-		
+	sync : function(){                  
 		function connectThenSync(){
 			if(!Ti.Network.online){
 				alert("A network connection is needed to sync your notes. Please check your network connection and try again.");

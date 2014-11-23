@@ -32,6 +32,7 @@ var sync = function(callback){
             //Perform actions based on server provided events
             new serverEventList(syncLog)
                 .then(function(srvEvents){
+                    console.debug("srvEvents:" + JSON.stringify(srvEvents));
                     serverEvents = srvEvents.data; //make this variable accessible outside of this closure           
                     new serverRemovedEvents(serverEvents);
                     return new serverAddedEvents(serverEvents);
@@ -66,6 +67,7 @@ var sync = function(callback){
             //Remove our local event cache
             //evtStore.removeAll();
             
+            Alloy.Collections.note.fetch();
             callback({
                 success:true
             });         

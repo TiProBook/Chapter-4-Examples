@@ -1,6 +1,14 @@
 var Q = require("q");
 
 var agent = {
+    formatDownloadResults :function(input){
+        try{
+            var data = JSON.parse(input);
+            return (( Object.prototype.toString.call( data ) === '[object Array]' ) ? data[0] : data);
+        }catch(err){
+            return null;
+        }
+    },    
 	createNoteRequest : function(noteID){
 		var model = Alloy.Collections.note.get(noteID);
 		if(model !=undefined || model !=null){
@@ -47,14 +55,14 @@ var agent = {
         return deferred.promise;    	    
 	},
 	downloadFromServer : function(noteID,exists){
-	    console.debug('downloading noteID:' + noteID);
+	    console.debug('downloadFromServer noteID:' + noteID);
 	    var deferred = Q.defer();  
-        var query = "?$filter=id%20eq%" + noteID;
+	    var query = "?$filter=id%20eq%20%27" + noteID + "%27";
         Alloy.Globals.azure.QueryTable('notes', query, function(jsonResponse) {
-            var data = JSON.parse(jsonResponse);
+            var data = agent.formatDownloadResults(jsonResponse);          
             if(exists){
                 //Update existing model
-                var note = notes.get(noteID);
+                var note = Alloy.Collections.note.get(noteID);
                 note.set({
                     notetext : data.notetext,
                     modifyid : data.modifyid
@@ -63,15 +71,14 @@ var agent = {
             }else{
                 //Add new model
                 var model = Alloy.createModel('note', {
-                  id : data.id,
+                  id : Ti.Platform.createUUID(),
                   notetext : data.notetext,
-                  modifyid : data.modifyid
+                  modifyid : new Date().getTime()
                 });
                 // add new model to the global collection
                 Alloy.Collections.note.add(model);
-                model.save();               
+                model.save();              
             }
-       
             Alloy.Collections.eventStore.removeEventsForNote(noteID);
             deferred.resolve();                
         }, function(err) {
@@ -97,7 +104,7 @@ var agent = {
 	  }  
 	  return value;
 	},
-    gatherServerInfo : function(localEvents,serverEvents){
+    gatherServerInfo : function(localEvents,serverEvents){    
             var promises = [];
             var output = [];
             var deferredOutter = Q.defer(); 
@@ -107,8 +114,8 @@ var agent = {
                 var noteID = note.noteid;
                 var search = _.where(serverEvents,{noteid: noteID});
                  if(search.length == 0){
-                    console.debug("need to lookup server for noteID:" + noteID); 
-                    var query = "?$filter=id%20eq%" + noteID;
+                    console.debug("need to lookup server for noteID:" + noteID);
+                    var query = "?$filter=id%20eq%20%27" + noteID + "%27";
                     Alloy.Globals.azure.QueryTable('notes', query, function(jsonResponse) {
                         console.debug('adding server version noteID:' + noteID);
                         var data = JSON.parse(jsonResponse);
@@ -135,15 +142,17 @@ var agent = {
             
             return deferredOutter.promise;
     },	
-	compare : function(localEvents,serverEvents,eventPublisher){
+	compare : function(localEvents,serverEvents,eventPublisher){        
 	    var localIDs = agent.formatToNoteIDList(localEvents);
-	    var serverIDs = agent.formatToNoteIDList(serverEvents);
-	    var changes = _.uniq(localIDs,serverIDs);
+	    var serverIDs = agent.formatToNoteIDList(serverEvents);	    
+	    var changes = _.uniq(_.union(localIDs,serverIDs));
 	    var promises = [];
+	    
+	    console.debug("evaluating " + changes.length + " changes");	    
 	    _.each(changes, function(noteID) {
 	        
 	        var exists = Alloy.Collections.note.noteExists(noteID);  
-            var localVersion = agent.nz(agent.getLocalNoteInfo(noteID,localEvents));
+            var localVersion = exists ? agent.nz(agent.getLocalNoteInfo(noteID,localEvents)) : -1 ;
             var serverVersion = agent.nz(agent.getMaxEvent(noteID,serverEvents).modifyid);
             console.debug("noteID:" + noteID + " localVersion:" + localVersion + " serverVersion:" + serverVersion); 
                
@@ -158,7 +167,7 @@ var agent = {
                         
             if((exists == false) || (serverVersion > localVersion)){
                console.debug("Downloading to local");
-               promises.push(downloadFromServer(noteID,exists));                 
+               promises.push(agent.downloadFromServer(noteID,exists));                 
             }               	          
             
 	    });	    
@@ -169,25 +178,51 @@ var agent = {
 
 var publisher = function(localEvents,serverEvents,eventPublisher){	
 	console.debug('Starting : Updated event management');
-	var defer = Q.defer();
-	localEvents = localEvents.toJSON();
-    agent.gatherServerInfo(localEvents,serverEvents)
-    .then(function(serverInfoFull){
-        return agent.compare(localEvents,serverInfoFull,eventPublisher)
+    var localUpdateEvts = _.where(localEvents.toJSON(),{eventtype:'updated'});
+    var serverUpdateEvts = _.where(serverEvents,{eventtype:'updated'});
+
+    function serverCorrelationRequire(){
+        var defer = Q.defer();
+        console.debug("Server Lookup required to match local evenets");
+        agent.gatherServerInfo(localEvents,serverUpdateEvts)
+        .then(function(serverInfoFull){
+            return agent.compare(localUpdateEvts,serverInfoFull,eventPublisher)
+            .then(function(){
+                console.debug('Finished : Updated event management');
+                defer.resolve({
+                    sucess:true
+                });           
+           });
+        }).catch(function(err){
+            console.error('Error : Updated event management:' + JSON.stringify(err));
+            defer.reject({
+                success:  false, message: err
+            });
+        }); 
+        
+        return defer.promise;        
+    };
+    
+    function serverProcessOnly(){
+        var defer = Q.defer();
+        console.debug("Running Update Server Processing Only");
+        agent.compare(localUpdateEvts,serverUpdateEvts,eventPublisher)
         .then(function(){
             console.debug('Finished : Updated event management');
             defer.resolve({
                 sucess:true
             });           
-       });
-    }).catch(function(err){
-        console.error('Error : Updated event management:' + JSON.stringify(err));
-        defer.reject({
-            success:  false, message: err
-        });
-    });
-		
-	return defer.promise;		
+        }).catch(function(err){
+            console.error('Error : Updated event management:' + JSON.stringify(err));
+            defer.reject({
+                success:  false, message: err
+            });
+        }); 
+        
+        return defer.promise;       
+    } 
+        	
+	return (localUpdateEvts.length===0) ? serverProcessOnly() : serverCorrelationRequire();		
 };
 
 module.exports = publisher;

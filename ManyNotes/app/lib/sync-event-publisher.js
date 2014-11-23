@@ -11,7 +11,7 @@ var agent = {
     },    
 	getServerEventsForNote : function(noteID){
 		var deferred = Q.defer();
-		var query = "?$filter=noteid%20eq%20'" + noteID + "'";
+	    var query = "?$filter=noteid%20eq%20%27" + noteID + "%27";
 		    Alloy.Globals.azure.QueryTable('noteEvents', query, function(jsonResponse) {
 		      var data = agent.formatResults(jsonResponse);
 			  if(data == null){

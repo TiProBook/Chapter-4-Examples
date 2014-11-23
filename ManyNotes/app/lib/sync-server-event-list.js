@@ -49,13 +49,12 @@ var agent = {
 
 var publisher = function(syncLog){
 	var defer = Q.defer();
-	var serverEvents = [];
 	
 	console.debug('Starting: getting server event list');
 	var lastID = syncLog.findLastTranactionID();
 	console.debug('lastID=' + lastID);
 	agent.eventsSince(lastID)
-		.then(function(){
+		.then(function(serverEvents){
 			console.debug('Finishing: getting server event list');
 			defer.resolve({
 				sucess:true,
