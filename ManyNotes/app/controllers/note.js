@@ -89,7 +89,7 @@ $.txtNote.addEventListener('change',function(e){
 	noteChanged = true;
 });
 
-$.noteWindow.addEventListener('blur',function(e){
+$.noteWindow.addEventListener('close',function(e){
 	if(noteChanged){
 	   //Persist Notes
 	   viewController.changed();
