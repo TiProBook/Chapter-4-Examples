@@ -26,7 +26,7 @@ var sync = function(callback){
 	//Initialize our transaction log
 	syncLog.init();
 	
-	var flow = {
+	var syncFlow = {
         serverSide :function(){
             var serverEvents = [];
             //Perform actions based on server provided events
@@ -37,7 +37,7 @@ var sync = function(callback){
                     new serverRemovedEvents(serverEvents);
                     return new serverAddedEvents(serverEvents);
                 }).then(function(){
-                    flow.versionCompare(serverEvents);
+                    syncFlow.versionCompare(serverEvents);
                 }).catch(function(err){
                     console.error('sync error:' + JSON.stringify(err));
                     callback({
@@ -51,7 +51,7 @@ var sync = function(callback){
             //Manage updated events
             new manageUpdatedEvents(evtStore,serverEvents,eventPublisher)
             .then(function(){
-                 flow.complete();
+                 syncFlow.complete();
             }).catch(function(err){
                 console.error('sync error:' + JSON.stringify(err));
                 callback({
@@ -79,7 +79,7 @@ var sync = function(callback){
 		.then(function(){
 			return new localRemovedEvents(evtStore,eventPublisher);	
 		}).then(function(){
-		   flow.serverSide(); 
+		   syncFlow.serverSide(); 
 		}).catch(function(err){
 			console.error('sync error:' + JSON.stringify(err));
 			callback({
