@@ -104,7 +104,7 @@ var agent = {
 	  }  
 	  return value;
 	},
-    gatherServerInfo : function(localEvents,serverEvents){    
+    gatherServerEventInfo : function(localEvents,serverEvents){    
             var promises = [];
             var output = [];
             var deferredOutter = Q.defer(); 
@@ -142,7 +142,7 @@ var agent = {
             
             return deferredOutter.promise;
     },	
-	compare : function(localEvents,serverEvents,eventPublisher){        
+    comparison : function(localEvents,serverEvents,eventPublisher){        
 	    var localIDs = agent.formatToNoteIDList(localEvents);
 	    var serverIDs = agent.formatToNoteIDList(serverEvents);	    
 	    var changes = _.uniq(_.union(localIDs,serverIDs));
@@ -181,12 +181,12 @@ var publisher = function(localEvents,serverEvents,eventPublisher){
     var localUpdateEvts = _.where(localEvents.toJSON(),{eventtype:'updated'});
     var serverUpdateEvts = _.where(serverEvents,{eventtype:'updated'});
 
-    function serverCorrelationRequire(){
+    function serverCorrelationRequired(){
         var defer = Q.defer();
         console.debug("Server Lookup required to match local evenets");
-        agent.gatherServerInfo(localUpdateEvts,serverUpdateEvts)
+        agent.gatherServerEventInfo(localUpdateEvts,serverUpdateEvts)
         .then(function(serverInfoFull){
-            return agent.compare(localUpdateEvts,serverInfoFull,eventPublisher)
+            return agent.comparison(localUpdateEvts,serverInfoFull,eventPublisher)
             .then(function(){
                 console.debug('Finished : Updated event management');
                 defer.resolve({
@@ -206,7 +206,7 @@ var publisher = function(localEvents,serverEvents,eventPublisher){
     function serverProcessOnly(){
         var defer = Q.defer();
         console.debug("Running Update Server Processing Only");
-        agent.compare(localUpdateEvts,serverUpdateEvts,eventPublisher)
+        agent.comparison(localUpdateEvts,serverUpdateEvts,eventPublisher)
         .then(function(){
             console.debug('Finished : Updated event management');
             defer.resolve({
@@ -222,7 +222,7 @@ var publisher = function(localEvents,serverEvents,eventPublisher){
         return defer.promise;       
     }; 
         	
-	return (localUpdateEvts.length===0) ? serverProcessOnly() : serverCorrelationRequire();		
+	return (localUpdateEvts.length===0) ? serverProcessOnly() : serverCorrelationRequired();		
 };
 
 module.exports = publisher;
