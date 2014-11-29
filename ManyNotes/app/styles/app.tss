@@ -3,6 +3,11 @@
 	barColor:"#f1f1f1"
 }
 
+"Window[platform=android formFactor=handheld]": {
+	backgroundColor:"#fff",
+	barColor:"#f1f1f1"
+}
+
 "Label": {
 	width: Ti.UI.SIZE,
 	height: Ti.UI.SIZE,
